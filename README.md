@@ -1,13 +1,5 @@
-# ICF Cosmos Node Infrastructure - Welcome Kit
+# ICF Cosmos Node Infrastructure
 
-<div align="center">
-
-**🔬 Powered by BryanLabs**
-*Professional blockchain infrastructure solutions for the Cosmos ecosystem*
-
----
-
-</div>
 
 ## 🎉 Welcome to Your Custom Cosmos Infrastructure
 
@@ -196,7 +188,6 @@ If you encounter any issues or have questions:
 
 1. **Telegram**: Contact Dan Bryan directly in our existing Telegram channel
 2. **GitHub Issues**: Create an issue in this repository and tag `@danb` - I'll resolve it promptly
-3. **Email**: For urgent matters, reach out via your established communication channels
 
 ### Response Times
 
@@ -263,30 +254,3 @@ The benchmark tool uses the included `config.yaml` file which defines:
 - **Chain-specific optimizations** (SDK versions, query styles)
 
 ---
-
-<div align="center">
-
-## 🔬 About BryanLabs
-
-**Professional Blockchain Infrastructure Solutions**
-
-We specialize in high-performance Cosmos ecosystem infrastructure, delivering:
-- **Fast, reliable blockchain snapshots** (50-500 Mbps speeds, 4x daily updates)
-- **Custom node optimization** for high-performance applications
-- **Enterprise-grade connectivity** (ASN 401711, Equinix peering)
-- **24/7 monitoring and support** from our Silver Spring, MD operations center
-
-*Powered by DACS-IX peering fabric with global CDN delivery*
-
----
-
-**Repository:** [github.com/bryanlabs/icf-node-benchmark](https://github.com/bryanlabs/icf-node-benchmark)
-**Contact:** Dan Bryan (@danb) - Available via Telegram or GitHub Issues
-**Company:** [BryanLabs](https://snapshots.bryanlabs.net) - Professional blockchain infrastructure
-**Infrastructure Version:** v1.0
-**Benchmark Tool Version:** v1.0
-**Last Updated:** 2025-01-03
-
-*Built with ❤️ by the BryanLabs team for reliable blockchain infrastructure*
-
-</div>
