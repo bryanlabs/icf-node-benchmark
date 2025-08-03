@@ -1,4 +1,4 @@
-module github.com/bryanlabs/icf-node-benchmark
+module github.com/bryanlabs/icf-nodes
 
 go 1.23
 
