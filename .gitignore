@@ -1,12 +1,14 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
+# ICF Node Benchmark - .gitignore
+# Based on https://github.com/github/gitignore/blob/main/Go.gitignore
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+benchmark
+benchmark.exe
 
 # Test binary, built with `go test -c`
 *.test
@@ -16,6 +18,8 @@
 coverage.*
 *.coverprofile
 profile.cov
+coverage.txt
+coverage.html
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
@@ -24,9 +28,52 @@ profile.cov
 go.work
 go.work.sum
 
-# env file
+# Environment files
 .env
+.env.local
+*.secret
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# Editor/IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Build artifacts
+dist/
+build/
+
+# Backup files
+*.bak
+*.backup
+
+# Local development configs
+config-local.yaml
+local-config.yaml
+
+# Benchmark results and outputs
+benchmarks/
+results/
+*.benchmark
+
+# Documentation artifacts
+docs/build/

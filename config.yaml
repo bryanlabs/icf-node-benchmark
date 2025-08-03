@@ -1,0 +1,89 @@
+# ICF Trading Application Benchmark Configuration
+# This config defines the chains and performance thresholds for ICF's trading app requirements
+
+chains:
+  neutron:
+    name: "Neutron"
+    rpc: "https://neutron-rpc.bryanlabs.net"
+    api: "https://neutron-api.bryanlabs.net"
+    grpc: "neutron-grpc.bryanlabs.net:443"
+    websocket: "wss://neutron-rpc.bryanlabs.net/websocket"
+    block_time: 1.1s  # 1.1 second block times for granular testing
+    enabled: true
+    sdk_version: "v0.50.13-neutron-rpc"
+    consumer_chain: true
+    api_query_style: "query"
+    test_addresses:
+      - "neutron1m9l358xunhhwds0568za49mzhvuxx9ux8xafx2"
+    query_strategies:
+      tx_height_query: "exact"
+      fallback_query_height: 31413000
+  
+  dydx:
+    name: "dYdX"
+    rpc: "https://dydx-rpc.bryanlabs.net"
+    api: "https://dydx-api.bryanlabs.net"
+    grpc: "dydx-grpc.bryanlabs.net:443"
+    websocket: "wss://dydx-rpc.bryanlabs.net/websocket"
+    block_time: 1.1s  # Fast blocks
+    enabled: true
+    sdk_version: "v0.50.6-0.20250708185419"
+    consumer_chain: false
+    api_query_style: "query"
+    test_addresses:
+      - "dydx199tqg4wdlnu4qjlxchpd7seg454937hjrknju4"
+    query_strategies:
+      tx_height_query: "exact"
+      fallback_query_height: 0
+    
+  pryzm:
+    name: "Pryzm"
+    rpc: "https://pryzm-rpc.bryanlabs.net"
+    api: "https://pryzm-api.bryanlabs.net"
+    grpc: "pryzm-grpc.bryanlabs.net:443"
+    websocket: "wss://pryzm-rpc.bryanlabs.net/websocket"
+    block_time: 5.6s  # Conservative estimate
+    enabled: true
+    sdk_version: "v0.47.17"
+    consumer_chain: false
+    api_query_style: "events"
+    test_addresses: []
+    query_strategies:
+      tx_height_query: "exact"
+      fallback_query_height: 0
+
+# Performance thresholds for ICF's trading application
+thresholds:
+  data_retention:
+    target_days: 4      # ICF requested 1 week
+    warn_days: 3        # Warning if less than 6 days
+    fail_days: 1        # Fail if less than 3 days
+    
+  get_tx_response:
+    pass: 1s            # Should be very fast for trading
+    warn: 2s            # Warning if slower
+    fail: 5s            # Fail if too slow
+    
+  get_tx_responses_for_event:
+    pass: 3s            # Event queries can be more complex
+    warn: 10s           # Warning threshold
+    fail: 30s           # Fail threshold
+    
+  bank_query_balance:
+    pass: 1s            # Balance queries should be fast
+    warn: 3s            # Warning threshold  
+    fail: 10s           # Fail threshold
+    
+  event_indexing:
+    required_events: 6  # Total events we test
+    pass_threshold: 5   # 5-6 working = PASS
+    warn_threshold: 3   # 3-4 working = WARN
+    fail_threshold: 2   # < 3 working = FAIL
+
+# Test execution configuration
+test_config:
+  timeout: 30s                # Maximum time per test
+  retry_attempts: 2           # Number of retries for transient failures
+  parallel_execution: true  # Disable concurrent test execution to prevent race conditions
+  block_search_depth: 50      # How many blocks to search for transactions
+  test_iterations: 20          # Number of iterations to run for each test (for latency statistics)
