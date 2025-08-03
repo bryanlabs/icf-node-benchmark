@@ -55,7 +55,7 @@ chains:
 # Performance thresholds for ICF's trading application
 thresholds:
   data_retention:
-    target_days: 4      # ICF requested 1 week
+    target_days: 7      # ICF requested 1 week
     warn_days: 3        # Warning if less than 6 days
     fail_days: 1        # Fail if less than 3 days
 

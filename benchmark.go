@@ -678,7 +678,11 @@ func checkDataRetention(chainEndpoints ChainEndpoints) {
 			if status == "FAIL" {
 				logResult(chainEndpoints.Name, "Data Retention", status,
 					fmt.Sprintf("Only %.1f days of data available (target: %d+ days)", retentionDays, targetDays),
-					latency, nil)
+					latency, map[string]interface{}{
+						"retention_days":  retentionDays,
+						"earliest_height": earliestHeight,
+						"current_height":  currentHeight,
+					})
 			} else {
 				logResult(chainEndpoints.Name, "Data Retention", status,
 					fmt.Sprintf("Has %.1f days of data (target: %d+ days)", retentionDays, targetDays),
@@ -2663,7 +2667,7 @@ func getStatusIcon(status string) string {
 	case "PASS":
 		return "✅"
 	case "WARN":
-		return "⚠️"
+		return "🟡"
 	case "FAIL":
 		return "❌"
 	default:
