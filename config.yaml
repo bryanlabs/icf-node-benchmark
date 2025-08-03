@@ -18,7 +18,7 @@ chains:
     query_strategies:
       tx_height_query: "exact"
       fallback_query_height: 31413000
-  
+
   dydx:
     name: "dYdX"
     rpc: "https://dydx-rpc.bryanlabs.net"
@@ -35,7 +35,7 @@ chains:
     query_strategies:
       tx_height_query: "exact"
       fallback_query_height: 0
-    
+
   pryzm:
     name: "Pryzm"
     rpc: "https://pryzm-rpc.bryanlabs.net"
@@ -58,22 +58,22 @@ thresholds:
     target_days: 4      # ICF requested 1 week
     warn_days: 3        # Warning if less than 6 days
     fail_days: 1        # Fail if less than 3 days
-    
+
   get_tx_response:
     pass: 1s            # Should be very fast for trading
     warn: 2s            # Warning if slower
     fail: 5s            # Fail if too slow
-    
+
   get_tx_responses_for_event:
     pass: 3s            # Event queries can be more complex
     warn: 10s           # Warning threshold
     fail: 30s           # Fail threshold
-    
+
   bank_query_balance:
     pass: 1s            # Balance queries should be fast
-    warn: 3s            # Warning threshold  
+    warn: 3s            # Warning threshold
     fail: 10s           # Fail threshold
-    
+
   event_indexing:
     required_events: 6  # Total events we test
     pass_threshold: 5   # 5-6 working = PASS
