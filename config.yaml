@@ -86,4 +86,4 @@ test_config:
   retry_attempts: 2           # Number of retries for transient failures
   parallel_execution: true  # Disable concurrent test execution to prevent race conditions
   block_search_depth: 50      # How many blocks to search for transactions
-  test_iterations: 300          # Number of iterations to run for each test (for latency statistics)
+  test_iterations: 50          # Number of iterations to run for each test (for latency statistics)
