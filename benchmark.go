@@ -2402,7 +2402,7 @@ func generateProtocolSectionsWithStats(chainTests []BenchmarkResult) {
 				if r.Status == "FAIL" {
 					statusIcon = "❌"
 				} else if r.Status == "WARN" && statusIcon != "❌" {
-					statusIcon = "⚠️"
+					statusIcon = "🟡"
 				}
 			}
 
@@ -2475,7 +2475,7 @@ func generateProtocolSectionsWithStats(chainTests []BenchmarkResult) {
 				if r.Status == "FAIL" {
 					statusIcon = "❌"
 				} else if r.Status == "WARN" && statusIcon != "❌" {
-					statusIcon = "⚠️"
+					statusIcon = "🟡"
 				}
 
 				// Check if any result has iteration metadata
@@ -2547,7 +2547,7 @@ func generateProtocolSectionsWithStats(chainTests []BenchmarkResult) {
 				if r.Status == "FAIL" {
 					statusIcon = "❌"
 				} else if r.Status == "WARN" && statusIcon != "❌" {
-					statusIcon = "⚠️"
+					statusIcon = "🟡"
 				}
 			}
 
@@ -2620,7 +2620,7 @@ func generateProtocolSectionsWithStats(chainTests []BenchmarkResult) {
 				if r.Status == "FAIL" {
 					statusIcon = "❌"
 				} else if r.Status == "WARN" && statusIcon != "❌" {
-					statusIcon = "⚠️"
+					statusIcon = "🟡"
 				}
 			}
 
