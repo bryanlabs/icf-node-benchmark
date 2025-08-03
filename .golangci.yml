@@ -8,12 +8,8 @@ run:
 linters:
   enable:
     - errcheck
-    - gofmt
-    - goimports
-    - gosimple
     - govet
     - ineffassign
-    - misspell
     - staticcheck
     - unused
     - gosec
