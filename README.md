@@ -61,6 +61,76 @@ Your infrastructure is backed by enterprise-grade connectivity through our dedic
 
 **Technical Advantage**: Enterprise-grade connectivity powered by DACS-IX peering fabric ensures optimal performance and redundancy for blockchain infrastructure.
 
+## 📊 Real-Time Monitoring & Analytics
+
+Your infrastructure includes a comprehensive monitoring stack built on enterprise-grade observability tools, providing complete visibility into node performance, network activity, storage utilization, and service health.
+
+### Monitoring Components
+
+**Core Stack:**
+- **Prometheus** - Metrics collection and time-series database
+- **Grafana** - Interactive dashboards and visualization
+- **Loki** - Log aggregation and search 
+- **Node Exporters** - System-level metrics (CPU, memory, disk, network)
+- **CometBFT Exporters** - Blockchain-specific metrics (block height, sync status, peers)
+- **HAProxy Exporter** - Load balancer and service health metrics
+- **TopoLVM Exporter** - Storage volume monitoring
+
+**Key Features:**
+- **Dedicated Instance** - Your own isolated Grafana instance at `grafana-icf.bryanlabs.net`
+- **Real-time Metrics** - 30-second collection intervals for most metrics
+- **Interactive Dashboards** - Filter, search, and drill down into specific data
+- **Historical Data** - Full retention for performance trending analysis
+
+### 🎯 Key Dashboards
+
+#### 1. [HAProxy Services Dashboard](https://grafana-icf.bryanlabs.net/d/haproxy-overview-internal-icf/ha-proxy-overview-internal-icf?orgId=1&from=now-6h&to=now&timezone=browser&var-backend=$__all&refresh=5s) **(Most Important)**
+**Purpose:** Real-time service health monitoring
+- ✅ **Service Status** - Up/down status for all RPC, API, and GRPC endpoints
+- 📊 **Request Activity** - Live traffic and request patterns per service
+- ⚠️ **Error Detection** - HTTP response codes and service issues
+- 👥 **Usage Analytics** - Which endpoints are being used and by whom
+- 🌐 **Session Tracking** - Connection data and bandwidth per service
+
+#### 2. [Node Performance Dashboard](https://grafana-icf.bryanlabs.net/d/cometbft-nodes-internal-icf/cometbft-nodes-dashboard-internal-icf?orgId=1&from=now-6h&to=now&timezone=browser&var-chain_id=pryzm-1&var-instance=$__all&var-search_term=&refresh=30s)
+**Purpose:** Blockchain node health and synchronization
+- 🔄 **Sync Status** - Real-time block synchronization monitoring (positive = ahead, negative = behind)
+- 📊 **Block Monitoring** - Block production, validation, and processing times
+- 🔍 **Interactive Log Search** - Real-time log filtering and search capabilities
+- 👥 **Peer Connectivity** - Network peer status and connection health
+- 💫 **Transaction Monitoring** - Mempool status and transaction processing
+
+**⚠️ Important:** Select only ONE chain ID at a time, or dashboard queries will fail
+
+#### 3. [Storage Dashboard](https://grafana-icf.bryanlabs.net/d/topolvm-pvc-usage-icf/topolvm-and-pvc-usage-icf?orgId=1&from=now-6h&to=now&timezone=browser&var-pvc_filter=$__all&refresh=30s)
+**Purpose:** Storage utilization and capacity planning
+- 💾 **Total Capacity** - 11.6TB total storage across high-performance NVMe drives
+- 📈 **Usage Trends** - Storage growth patterns per chain
+- ⚡ **Performance Metrics** - I/O performance and throughput
+- 📊 **Per-Chain Breakdown** - Storage allocation by blockchain
+
+#### 4. [Network Bandwidth Dashboard](https://grafana-icf.bryanlabs.net/d/k8s-network-dashboard-icf/f09f9a80-kubernetes-network-dashboard-icf?orgId=1&from=now-6h&to=now&timezone=browser&var-namespace=fullnodes&refresh=5s)
+**Purpose:** Network utilization monitoring
+- 🌐 **Per-Chain Bandwidth** - Network usage by each blockchain
+- 📡 **Peer Synchronization** - Data transfer for blockchain synchronization
+- 📊 **Traffic Patterns** - Ingress/egress network patterns
+- ⚡ **Real-time Updates** - 5-second refresh for live network monitoring
+
+### 📈 Monitoring Benefits
+
+**Proactive Issue Detection:**
+- Sync lag alerts
+- Service health monitoring with immediate visibility
+
+**Performance Optimization:**
+- Monitor endpoint performance
+- Track resource utilization trends
+
+**Operational Excellence:**
+- 24/7 monitoring
+- Historical data
+- Complete transparency into infrastructure performance
+
 ## 🎯 ICF Application Optimizations
 
 Based on your feedback about needing event indexing, week-long data retention, and heavy usage of `GetTxResponse`, `GetTxResponsesForEvent`, and `BankQueryBalance` endpoints, we've made specific optimizations to ensure optimal performance for your application.
