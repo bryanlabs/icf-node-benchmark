@@ -76,4 +76,7 @@ results/
 
 # Documentation artifacts
 docs/build/
-stress
+
+# Binary artifacts (use ./ prefix to only ignore in root)
+./stress
+./benchmark
