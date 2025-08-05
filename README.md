@@ -204,7 +204,7 @@ iavl-lazy-loading = false      # Immediate loading for faster queries
 ```toml
 [mempool]
 max-txs = 15000
-recheck = false
+recheck = true
 keep-invalid-txs-in-cache = false
 size = 15000
 max_txs_bytes = 1073741824
@@ -214,8 +214,8 @@ cache_size = 30000
 **Network Performance:**
 ```toml
 # Fast chains (1s blocks) - optimized for high throughput
-send_rate = 2560000
-recv_rate = 2560000
+send_rate = 5120000
+recv_rate = 5120000
 timeout_broadcast_tx_commit = "10s"
 
 # Slower chains (6s blocks) - conservative settings
