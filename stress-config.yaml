@@ -1,0 +1,78 @@
+# Stress Test Configuration for Cosmos Nodes
+# This config defines aggressive load testing parameters for production readiness validation
+
+# Chain configurations (uses same format as config.yaml)
+chains:
+  neutron:
+    name: "Neutron"
+    rpc: "https://neutron-rpc.bryanlabs.net"
+    api: "https://neutron-api.bryanlabs.net"
+    grpc: "neutron-grpc.bryanlabs.net:443"
+    websocket: "wss://neutron-rpc.bryanlabs.net/websocket"
+    block_time: "1.1s"
+    enabled: true
+    test_addresses:
+      - "neutron1ap2gshzfwglun4y2gpz6meugggat42s7kw5wk2"
+      - "neutron1m9l358xunhhwds0568za49mzhvuxx9ux8xafx2"
+
+  dydx:
+    name: "dYdX"
+    rpc: "https://dydx-rpc.bryanlabs.net"
+    api: "https://dydx-api.bryanlabs.net"
+    grpc: "dydx-grpc.bryanlabs.net:443"
+    websocket: "wss://dydx-rpc.bryanlabs.net/websocket"
+    block_time: "1.1s"
+    enabled: true
+    test_addresses:
+      - "dydx1n98mgsv725meet0s88twgd3sjx70jvlm0ts9kf"
+      - "dydx199tqg4wdlnu4qjlxchpd7seg454937hjrknju4"
+
+  pryzm:
+    name: "Pryzm"
+    rpc: "https://pryzm-rpc.bryanlabs.net"
+    api: "https://pryzm-api.bryanlabs.net"
+    grpc: "pryzm-grpc.bryanlabs.net:443"
+    websocket: "wss://pryzm-rpc.bryanlabs.net/websocket"
+    block_time: "5.6s"
+    enabled: true
+    test_addresses:
+      - "pryzm1h2uffspprv6jdg9w80zdjksgyd235hcxjqnjqe045lzn7evnx92s6czuvg"
+
+# Stress test configuration
+stress_config:
+  # Number of concurrent workers (connections) per test
+  default_workers: 100        # Start with 100 concurrent connections
+
+  # Duration of stress test
+  default_duration: 60s        # Run for 60 seconds by default
+  
+  # Connection and request timeouts
+  connection_timeout: 10s      # Max time to establish connection
+  request_timeout: 10s         # Max time for individual request (must be > longest block time)
+  
+  # Query sizes (how much data to request)
+  rpc_query_size: 50          # Number of results per RPC query
+  api_query_size: 50          # Number of results per API query
+  
+  # How far back in history to query (for testing indexing)
+  height_lookback: 5000       # Query blocks up to 5k blocks back
+
+  # Workload configuration
+  mixed_workload: true         # Mix different query types for realistic load
+  
+  # Ramp up/down configuration
+  ramp_up_time: 10s           # Gradually add workers over 10 seconds
+  cool_down_time: 5s          # Wait 5 seconds before stopping
+  
+  # Reporting
+  reporting_interval: 5s       # Report progress every 5 seconds
+  
+  # Connection management
+  max_connection_reuse: 100   # Reuse connection for 100 requests before cycling
+  
+  # Protocol toggles
+  enable_websocket: true      # Disabled - connection issues
+  enable_grpc: true           # Include gRPC stress testing
+  
+  # Security settings
+  insecure_skip_verify: true  # Skip TLS certificate verification (for testing environments)

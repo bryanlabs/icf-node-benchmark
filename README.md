@@ -70,7 +70,7 @@ Your infrastructure includes a comprehensive monitoring stack built on enterpris
 **Core Stack:**
 - **Prometheus** - Metrics collection and time-series database
 - **Grafana** - Interactive dashboards and visualization
-- **Loki** - Log aggregation and search 
+- **Loki** - Log aggregation and search
 - **Node Exporters** - System-level metrics (CPU, memory, disk, network)
 - **CometBFT Exporters** - Blockchain-specific metrics (block height, sync status, peers)
 - **HAProxy Exporter** - Load balancer and service health metrics
@@ -292,18 +292,13 @@ Based on your application requirements:
 
 ```bash
 # Clone the repository
-git clone https://github.com/bryanlabs/icf-node-benchmark
-cd icf-node-benchmark
+git clone https://github.com/bryanlabs/icf-nodes
+cd icf-nodes
 
-# Install dependencies
-make install
-
-# Configuration is already included in the repository
-
-# Build the benchmark tool
+# Build both tools
 make build
 
-# Test individual chains (must be configured in config.yaml)
+# Test individual chains with benchmark tool
 ./benchmark neutron
 ./benchmark dydx
 ./benchmark pryzm
@@ -312,7 +307,11 @@ make build
 ./benchmark all
 
 # Or run directly with Go
-go run benchmark.go all
+go run ./cmd/benchmark all
+
+# Run stress tests
+./stress neutron 100 60  # 100 workers for 60 seconds
+go run ./cmd/stress pryzm 50 30  # Or run directly
 ```
 
 **Configuration:**
@@ -322,5 +321,43 @@ The benchmark tool uses the included `config.yaml` file which defines:
 - **Block times** (pre-calculated from chain analysis)
 - **Performance thresholds** (pass/warn/fail criteria)
 - **Chain-specific optimizations** (SDK versions, query styles)
+
+### Development with VS Code
+
+This repository includes two separate testing tools:
+- **cmd/benchmark/** - Performance benchmarking tool
+- **cmd/stress/** - Aggressive load testing tool
+
+The tools are organized in separate directories to avoid naming conflicts:
+
+```bash
+# Build both tools
+make build
+
+# Run the benchmark tool
+make benchmark ARGS=neutron
+# or directly:
+go run ./cmd/benchmark neutron
+./benchmark neutron  # If already built
+
+# Run the stress test tool  
+make stress ARGS='neutron 100 60'
+# or directly:
+go run ./cmd/stress neutron 100 60
+./stress neutron 100 60  # If already built
+```
+
+**Project Structure:**
+```
+icf-nodes/
+├── cmd/
+│   ├── benchmark/
+│   │   └── main.go    # Benchmark tool
+│   └── stress/
+│       └── main.go    # Stress test tool
+├── config.yaml        # Benchmark configuration
+├── stress-config.yaml # Stress test configuration
+└── Makefile          # Build automation
+```
 
 ---

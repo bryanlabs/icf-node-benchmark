@@ -7,8 +7,7 @@
 *.dll
 *.so
 *.dylib
-benchmark
-benchmark.exe
+bin/
 
 # Test binary, built with `go test -c`
 *.test
@@ -77,3 +76,4 @@ results/
 
 # Documentation artifacts
 docs/build/
+stress
