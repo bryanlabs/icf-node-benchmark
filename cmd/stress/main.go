@@ -721,7 +721,7 @@ func runWebSocketSession(id int, chainConfig ChainConfig) error {
 		"method":  "subscribe",
 		"id":      id,
 		"params": map[string]interface{}{
-			"query": "tm.event='NewBlock'",
+			"query": "tm.event='NewBlockHeader'", // Try NewBlockHeader instead of NewBlock
 		},
 	}
 
@@ -733,11 +733,19 @@ func runWebSocketSession(id int, chainConfig ChainConfig) error {
 	getOrCreateResult("WebSocket-Subscribe").recordRequest(true, time.Since(start), "")
 
 	// Read messages until connection fails or stop signal
+	messagesRead := 0
+	maxMessagesPerConnection := 20 // Recycle connection after 20 messages (~2 minutes for Pryzm)
+	
 	for {
 		select {
 		case <-stopSignal:
 			return nil
 		default:
+			// Check if we should recycle the connection
+			if messagesRead >= maxMessagesPerConnection {
+				// Gracefully close and return to create new connection
+				return nil
+			}
 			msgStart := time.Now()
 			
 			// Set read deadline for timeout
@@ -748,15 +756,33 @@ func runWebSocketSession(id int, chainConfig ChainConfig) error {
 			}
 			
 			// Read message from WebSocket
-			_, _, err := conn.ReadMessage()
+			_, message, err := conn.ReadMessage()
 			if err != nil {
 				// Connection closed or error occurred
-				getOrCreateResult("WebSocket-Read").recordRequest(false, time.Since(msgStart), "read_failed")
+				errorType := "read_failed"
+				if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+					errorType = "connection_closed"
+				} else if strings.Contains(err.Error(), "timeout") {
+					errorType = "read_timeout"
+				} else if strings.Contains(err.Error(), "reset") {
+					errorType = "connection_reset"
+				}
+				getOrCreateResult("WebSocket-Read").recordRequest(false, time.Since(msgStart), errorType)
 				return err
 			}
 			
 			// Successfully read message
-			getOrCreateResult("WebSocket-Read").recordRequest(true, time.Since(msgStart), "")
+			latency := time.Since(msgStart)
+			
+			// Check if this is a NewBlock event (will have block height)
+			if len(message) > 100 { // NewBlock events are typically larger
+				// This is likely a real block event
+				getOrCreateResult("WebSocket-Read").recordRequest(true, latency, "")
+			} else {
+				// This might be subscription confirmation or heartbeat
+				getOrCreateResult("WebSocket-Read").recordRequest(true, latency, "")
+			}
+			messagesRead++
 		}
 	}
 }

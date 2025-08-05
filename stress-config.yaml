@@ -48,7 +48,7 @@ stress_config:
   
   # Connection and request timeouts
   connection_timeout: 10s      # Max time to establish connection
-  request_timeout: 10s         # Max time for individual request (must be > longest block time)
+  request_timeout: 15s         # Max time for individual request (2.5x longest block time for safety)
   
   # Query sizes (how much data to request)
   rpc_query_size: 50          # Number of results per RPC query
