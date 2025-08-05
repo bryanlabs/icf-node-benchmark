@@ -142,7 +142,7 @@ Based on your feedback about needing event indexing, week-long data retention, a
 ```toml
 # Targeted event indexing for applications
 index-events = [
-  "message.action", "message.sender", "message.module",
+  "tx", "message.action", "message.sender", "message.module",
   "transfer.recipient", "transfer.sender", "transfer.amount",
   "coin_spent.spender", "coin_received.receiver", "coin_received.amount"
 ]
@@ -156,10 +156,11 @@ index-events = [
 **Our Optimization:**
 ```toml
 # Custom pruning for 1-week retention (chain-specific)
-pruning = "custom"
-pruning-keep-recent = 604800  # 1 week at 1s blocks = 604,800 blocks
-pruning-interval = 5000       # Optimized for fast block times
-min-retain-blocks = 604800
+pruning:
+  strategy: custom
+  keepRecent: 604800
+  interval: 5000
+  minRetainBlocks: 604800
 
 # For slower chains (6s blocks):
 pruning-keep-recent = 100800   # 1 week at 6s blocks = 100,800 blocks
@@ -202,15 +203,20 @@ iavl-lazy-loading = false      # Immediate loading for faster queries
 **Mempool Optimization:**
 ```toml
 [mempool]
-max-txs = 15000  # Enable mempool with higher capacity (was disabled by default)
+max-txs = 15000
+recheck = false
+keep-invalid-txs-in-cache = false
+size = 15000
+max_txs_bytes = 1073741824
+cache_size = 30000
 ```
 
 **Network Performance:**
 ```toml
 # Fast chains (1s blocks) - optimized for high throughput
-send_rate = 5120000
-recv_rate = 5120000
-timeout_broadcast_tx_commit = "30s"
+send_rate = 2560000
+recv_rate = 2560000
+timeout_broadcast_tx_commit = "10s"
 
 # Slower chains (6s blocks) - conservative settings
 send_rate = 2048000
@@ -221,9 +227,14 @@ timeout_broadcast_tx_commit = "60s"
 **Connection Management:**
 ```toml
 # Optimized for your current needs with room for growth
-max_subscription_clients = 100  # Ready for future streaming
-max_open_connections = 2000     # Handle heavy API usage
-experimental_close_on_slow_client = true  # Prevent degradation
+max_subscription_clients = 100
+max_open_connections = 100
+experimental_close_on_slow_client = true
+
+# API optimizations
+max-open-connections = 1500
+rpc-read-timeout = 15
+rpc-write-timeout = 15
 ```
 
 ## 🚀 Future Optimization Opportunities
