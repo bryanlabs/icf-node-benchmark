@@ -351,7 +351,7 @@ make benchmark ARGS=neutron
 go run ./cmd/benchmark neutron
 ./benchmark neutron  # If already built
 
-# Run the stress test tool  
+# Run the stress test tool
 make stress ARGS='neutron 100 60'
 # or directly:
 go run ./cmd/stress neutron 100 60

@@ -45,34 +45,36 @@ stress_config:
 
   # Duration of stress test
   default_duration: 60s        # Run for 60 seconds by default
-  
+
   # Connection and request timeouts
   connection_timeout: 10s      # Max time to establish connection
   request_timeout: 15s         # Max time for individual request (2.5x longest block time for safety)
-  
+
   # Query sizes (how much data to request)
   rpc_query_size: 50          # Number of results per RPC query
   api_query_size: 50          # Number of results per API query
-  
+
   # How far back in history to query (for testing indexing)
   height_lookback: 5000       # Query blocks up to 5k blocks back
 
   # Workload configuration
   mixed_workload: true         # Mix different query types for realistic load
-  
+
   # Ramp up/down configuration
   ramp_up_time: 10s           # Gradually add workers over 10 seconds
   cool_down_time: 5s          # Wait 5 seconds before stopping
-  
+
   # Reporting
   reporting_interval: 5s       # Report progress every 5 seconds
-  
+
   # Connection management
   max_connection_reuse: 100   # Reuse connection for 100 requests before cycling
-  
+
   # Protocol toggles
-  enable_websocket: true      # Disabled - connection issues
+  enable_rpc: true            # Include RPC stress testing
+  enable_api: true           # Include REST API stress testing
   enable_grpc: true           # Include gRPC stress testing
-  
+  enable_websocket: true      # Include WebSocket stress testing
+
   # Security settings
   insecure_skip_verify: true  # Skip TLS certificate verification (for testing environments)

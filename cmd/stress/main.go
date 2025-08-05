@@ -75,21 +75,23 @@ type ChainConfig struct {
 
 // StressConfig represents stress test parameters
 type StressConfig struct {
-	DefaultWorkers      int           `yaml:"default_workers"`
-	DefaultDuration     time.Duration `yaml:"default_duration"`
-	ConnectionTimeout   time.Duration `yaml:"connection_timeout"`
-	RequestTimeout      time.Duration `yaml:"request_timeout"`
-	RPCQuerySize        int           `yaml:"rpc_query_size"`        // Results per page for RPC
-	APIQuerySize        int           `yaml:"api_query_size"`        // Results per page for API
-	HeightLookback      int           `yaml:"height_lookback"`       // How far back to query
-	MixedWorkload       bool          `yaml:"mixed_workload"`        // Use variety of queries
-	RampUpTime          time.Duration `yaml:"ramp_up_time"`          // Time to ramp up workers
-	CoolDownTime        time.Duration `yaml:"cool_down_time"`        // Time to cool down
-	ReportingInterval   time.Duration `yaml:"reporting_interval"`    // How often to report stats
-	MaxConnectionReuse  int           `yaml:"max_connection_reuse"`  // Max requests per connection
-	EnableWebSocket     bool          `yaml:"enable_websocket"`      // Include WebSocket stress
-	EnableGRPC          bool          `yaml:"enable_grpc"`           // Include gRPC stress
-	InsecureSkipVerify  bool          `yaml:"insecure_skip_verify"`  // Skip TLS certificate verification (for testing)
+	DefaultWorkers     int           `yaml:"default_workers"`
+	DefaultDuration    time.Duration `yaml:"default_duration"`
+	ConnectionTimeout  time.Duration `yaml:"connection_timeout"`
+	RequestTimeout     time.Duration `yaml:"request_timeout"`
+	RPCQuerySize       int           `yaml:"rpc_query_size"`       // Results per page for RPC
+	APIQuerySize       int           `yaml:"api_query_size"`       // Results per page for API
+	HeightLookback     int           `yaml:"height_lookback"`      // How far back to query
+	MixedWorkload      bool          `yaml:"mixed_workload"`       // Use variety of queries
+	RampUpTime         time.Duration `yaml:"ramp_up_time"`         // Time to ramp up workers
+	CoolDownTime       time.Duration `yaml:"cool_down_time"`       // Time to cool down
+	ReportingInterval  time.Duration `yaml:"reporting_interval"`   // How often to report stats
+	MaxConnectionReuse int           `yaml:"max_connection_reuse"` // Max requests per connection
+	EnableRPC          bool          `yaml:"enable_rpc"`           // Include RPC stress
+	EnableAPI          bool          `yaml:"enable_api"`           // Include REST API stress
+	EnableWebSocket    bool          `yaml:"enable_websocket"`     // Include WebSocket stress
+	EnableGRPC         bool          `yaml:"enable_grpc"`          // Include gRPC stress
+	InsecureSkipVerify bool          `yaml:"insecure_skip_verify"` // Skip TLS certificate verification (for testing)
 }
 
 // StressResult tracks performance metrics
@@ -196,6 +198,13 @@ func loadConfig() error {
 	if !config.StressConfig.InsecureSkipVerify {
 		config.StressConfig.InsecureSkipVerify = true
 	}
+	// Default to true for RPC and API if not explicitly set
+	if !config.StressConfig.EnableRPC && !config.StressConfig.EnableAPI &&
+		!config.StressConfig.EnableWebSocket && !config.StressConfig.EnableGRPC {
+		// If none are set, enable RPC and API by default
+		config.StressConfig.EnableRPC = true
+		config.StressConfig.EnableAPI = true
+	}
 
 	// Initialize HTTP client after config is loaded
 	initHTTPClient()
@@ -229,14 +238,14 @@ func (sr *StressResult) recordRequest(success bool, latency time.Duration, error
 	if success {
 		atomic.AddInt64(&sr.SuccessCount, 1)
 		atomic.AddInt64(&sr.TotalLatency, int64(latency.Microseconds()))
-		
+
 		// Track latencies for percentile calculation
 		sr.latencies = append(sr.latencies, latency)
 		if len(sr.latencies) > 10000 {
 			// Keep only last 10000 for memory efficiency
 			sr.latencies = sr.latencies[len(sr.latencies)-10000:]
 		}
-		
+
 		if latency < sr.MinLatency {
 			sr.MinLatency = latency
 		}
@@ -325,22 +334,22 @@ func getAPIHeavyQueries(chainConfig ChainConfig, currentHeight int64) []func() {
 		// Skip gov proposals - often not implemented or uses different version
 		// Comment out to avoid HTTP 501 errors
 		/*
-		func() {
-			url := fmt.Sprintf("%s/cosmos/gov/v1/proposals?pagination.limit=100", chainConfig.API)
-			makeHTTPRequest("API-Proposals", url)
-		},
+			func() {
+				url := fmt.Sprintf("%s/cosmos/gov/v1/proposals?pagination.limit=100", chainConfig.API)
+				makeHTTPRequest("API-Proposals", url)
+			},
 		*/
 		// Skip transfer event queries - often causes HTTP 500 errors
 		// Comment out as event indexing may not be enabled
 		/*
-		func() {
-			if len(chainConfig.TestAddresses) > 0 {
-				addr := chainConfig.TestAddresses[randomInt(len(chainConfig.TestAddresses))]
-				url := fmt.Sprintf("%s/cosmos/tx/v1beta1/txs?events=transfer.recipient='%s'&pagination.limit=%d",
-					chainConfig.API, addr, config.StressConfig.APIQuerySize)
-				makeHTTPRequest("API-TransferEvents", url)
-			}
-		},
+			func() {
+				if len(chainConfig.TestAddresses) > 0 {
+					addr := chainConfig.TestAddresses[randomInt(len(chainConfig.TestAddresses))]
+					url := fmt.Sprintf("%s/cosmos/tx/v1beta1/txs?events=transfer.recipient='%s'&pagination.limit=%d",
+						chainConfig.API, addr, config.StressConfig.APIQuerySize)
+					makeHTTPRequest("API-TransferEvents", url)
+				}
+			},
 		*/
 	}
 	return queries
@@ -380,35 +389,35 @@ func getGRPCHeavyQueries(chainConfig ChainConfig, currentHeight int64) []func() 
 		// Skip GetTxsEvent - often fails due to no indexed events or transactions
 		// Comment out to avoid consistent failures
 		/*
-		func() {
-			conn, err := getGRPCConnection(chainConfig.GRPC)
-			if err != nil {
-				getOrCreateResult("GRPC-Connection").recordRequest(false, 0, "connection_failed")
-				return
-			}
-			defer conn.Close()
+			func() {
+				conn, err := getGRPCConnection(chainConfig.GRPC)
+				if err != nil {
+					getOrCreateResult("GRPC-Connection").recordRequest(false, 0, "connection_failed")
+					return
+				}
+				defer conn.Close()
 
-			txClient := txtypes.NewServiceClient(conn)
-			ctx, cancel := context.WithTimeout(context.Background(), config.StressConfig.RequestTimeout)
-			defer cancel()
+				txClient := txtypes.NewServiceClient(conn)
+				ctx, cancel := context.WithTimeout(context.Background(), config.StressConfig.RequestTimeout)
+				defer cancel()
 
-			start := time.Now()
-			// Query recent transfer events - customer's heavy use case
-			// Using proper event format: tx.height>=X
-			_, err = txClient.GetTxsEvent(ctx, &txtypes.GetTxsEventRequest{
-				Events: []string{fmt.Sprintf("tx.height>=%d", currentHeight-100)},
-				Pagination: &query.PageRequest{
-					Limit: 50, // Reasonable limit for event queries
-				},
-			})
-			latency := time.Since(start)
+				start := time.Now()
+				// Query recent transfer events - customer's heavy use case
+				// Using proper event format: tx.height>=X
+				_, err = txClient.GetTxsEvent(ctx, &txtypes.GetTxsEventRequest{
+					Events: []string{fmt.Sprintf("tx.height>=%d", currentHeight-100)},
+					Pagination: &query.PageRequest{
+						Limit: 50, // Reasonable limit for event queries
+					},
+				})
+				latency := time.Since(start)
 
-			if err != nil {
-				getOrCreateResult("GRPC-GetTxsEvent").recordRequest(false, latency, "query_failed")
-			} else {
-				getOrCreateResult("GRPC-GetTxsEvent").recordRequest(true, latency, "")
-			}
-		},
+				if err != nil {
+					getOrCreateResult("GRPC-GetTxsEvent").recordRequest(false, latency, "query_failed")
+				} else {
+					getOrCreateResult("GRPC-GetTxsEvent").recordRequest(true, latency, "")
+				}
+			},
 		*/
 		// BankQueryBalance - Now with addresses that have balances
 		func() {
@@ -434,7 +443,7 @@ func getGRPCHeavyQueries(chainConfig ChainConfig, currentHeight int64) []func() 
 					},
 				})
 				latency := time.Since(start)
-				
+
 				if err != nil {
 					// Log the actual error for debugging Pryzm issues
 					if chainConfig.Name == "Pryzm" {
@@ -452,47 +461,47 @@ func getGRPCHeavyQueries(chainConfig ChainConfig, currentHeight int64) []func() 
 		// Skip GetTx - requires recent transactions which may not exist
 		// Comment out to avoid failures on chains with low activity
 		/*
-		func() {
-			conn, err := getGRPCConnection(chainConfig.GRPC)
-			if err != nil {
-				getOrCreateResult("GRPC-Connection").recordRequest(false, 0, "connection_failed")
-				return
-			}
-			defer conn.Close()
-
-			txClient := txtypes.NewServiceClient(conn)
-			ctx, cancel := context.WithTimeout(context.Background(), config.StressConfig.RequestTimeout)
-			defer cancel()
-
-			start := time.Now()
-			// First get some recent txs to have valid hashes
-			// Use a range query that's more likely to return results
-			lookbackBlocks := 10
-			txsResp, err := txClient.GetTxsEvent(ctx, &txtypes.GetTxsEventRequest{
-				Events: []string{fmt.Sprintf("tx.height>=%d", currentHeight-int64(lookbackBlocks))},
-				Pagination: &query.PageRequest{
-					Limit: 5,
-				},
-			})
-			
-			if err == nil && txsResp != nil && len(txsResp.TxResponses) > 0 {
-				// Query a specific tx by hash
-				txHash := txsResp.TxResponses[0].TxHash
-				_, err = txClient.GetTx(ctx, &txtypes.GetTxRequest{
-					Hash: txHash,
-				})
-				latency := time.Since(start)
-				
+			func() {
+				conn, err := getGRPCConnection(chainConfig.GRPC)
 				if err != nil {
-					getOrCreateResult("GRPC-GetTx").recordRequest(false, latency, "query_failed")
-				} else {
-					getOrCreateResult("GRPC-GetTx").recordRequest(true, latency, "")
+					getOrCreateResult("GRPC-Connection").recordRequest(false, 0, "connection_failed")
+					return
 				}
-			} else {
-				// No transactions found in recent blocks, skip test
-				getOrCreateResult("GRPC-GetTx").recordRequest(false, time.Since(start), "no_recent_txs")
-			}
-		},
+				defer conn.Close()
+
+				txClient := txtypes.NewServiceClient(conn)
+				ctx, cancel := context.WithTimeout(context.Background(), config.StressConfig.RequestTimeout)
+				defer cancel()
+
+				start := time.Now()
+				// First get some recent txs to have valid hashes
+				// Use a range query that's more likely to return results
+				lookbackBlocks := 10
+				txsResp, err := txClient.GetTxsEvent(ctx, &txtypes.GetTxsEventRequest{
+					Events: []string{fmt.Sprintf("tx.height>=%d", currentHeight-int64(lookbackBlocks))},
+					Pagination: &query.PageRequest{
+						Limit: 5,
+					},
+				})
+
+				if err == nil && txsResp != nil && len(txsResp.TxResponses) > 0 {
+					// Query a specific tx by hash
+					txHash := txsResp.TxResponses[0].TxHash
+					_, err = txClient.GetTx(ctx, &txtypes.GetTxRequest{
+						Hash: txHash,
+					})
+					latency := time.Since(start)
+
+					if err != nil {
+						getOrCreateResult("GRPC-GetTx").recordRequest(false, latency, "query_failed")
+					} else {
+						getOrCreateResult("GRPC-GetTx").recordRequest(true, latency, "")
+					}
+				} else {
+					// No transactions found in recent blocks, skip test
+					getOrCreateResult("GRPC-GetTx").recordRequest(false, time.Since(start), "no_recent_txs")
+				}
+			},
 		*/
 	}
 	return queries
@@ -607,10 +616,16 @@ func stressWorker(id int, chainConfig ChainConfig, wg *sync.WaitGroup) {
 
 	// Get current height once
 	currentHeight := getCurrentHeight(chainConfig.RPC)
-	
+
 	// Get query functions for each protocol
-	rpcQueries := getRPCHeavyQueries(chainConfig, currentHeight)
-	apiQueries := getAPIHeavyQueries(chainConfig, currentHeight)
+	rpcQueries := []func(){}
+	if config.StressConfig.EnableRPC {
+		rpcQueries = getRPCHeavyQueries(chainConfig, currentHeight)
+	}
+	apiQueries := []func(){}
+	if config.StressConfig.EnableAPI {
+		apiQueries = getAPIHeavyQueries(chainConfig, currentHeight)
+	}
 	grpcQueries := []func(){}
 	if config.StressConfig.EnableGRPC {
 		grpcQueries = getGRPCHeavyQueries(chainConfig, currentHeight)
@@ -619,8 +634,12 @@ func stressWorker(id int, chainConfig ChainConfig, wg *sync.WaitGroup) {
 	// Combine all queries if mixed workload
 	var allQueries []func()
 	if config.StressConfig.MixedWorkload {
-		allQueries = append(allQueries, rpcQueries...)
-		allQueries = append(allQueries, apiQueries...)
+		if config.StressConfig.EnableRPC {
+			allQueries = append(allQueries, rpcQueries...)
+		}
+		if config.StressConfig.EnableAPI {
+			allQueries = append(allQueries, apiQueries...)
+		}
 		if config.StressConfig.EnableGRPC {
 			allQueries = append(allQueries, grpcQueries...)
 		}
@@ -639,20 +658,26 @@ func stressWorker(id int, chainConfig ChainConfig, wg *sync.WaitGroup) {
 				query := allQueries[randomInt(len(allQueries))]
 				query()
 			} else {
-				// Round-robin through protocols
-				switch requestCount % 3 {
-				case 0:
-					if len(rpcQueries) > 0 {
+				// Round-robin through enabled protocols
+				enabledProtocols := []func(){}
+				if config.StressConfig.EnableRPC && len(rpcQueries) > 0 {
+					enabledProtocols = append(enabledProtocols, func() {
 						rpcQueries[randomInt(len(rpcQueries))]()
-					}
-				case 1:
-					if len(apiQueries) > 0 {
+					})
+				}
+				if config.StressConfig.EnableAPI && len(apiQueries) > 0 {
+					enabledProtocols = append(enabledProtocols, func() {
 						apiQueries[randomInt(len(apiQueries))]()
-					}
-				case 2:
-					if config.StressConfig.EnableGRPC && len(grpcQueries) > 0 {
+					})
+				}
+				if config.StressConfig.EnableGRPC && len(grpcQueries) > 0 {
+					enabledProtocols = append(enabledProtocols, func() {
 						grpcQueries[randomInt(len(grpcQueries))]()
-					}
+					})
+				}
+
+				if len(enabledProtocols) > 0 {
+					enabledProtocols[requestCount%len(enabledProtocols)]()
 				}
 			}
 			requestCount++
@@ -692,7 +717,7 @@ func webSocketStressWorker(id int, chainConfig ChainConfig, wg *sync.WaitGroup) 
 // runWebSocketSession handles a single WebSocket connection session
 func runWebSocketSession(id int, chainConfig ChainConfig) error {
 	start := time.Now()
-	
+
 	// Try to establish WebSocket connection
 	// #nosec G402 - TLS verification is configurable for stress testing
 	dialer := websocket.Dialer{
@@ -707,7 +732,7 @@ func runWebSocketSession(id int, chainConfig ChainConfig) error {
 		getOrCreateResult("WebSocket-Connect").recordRequest(false, time.Since(start), "connection_failed")
 		return err
 	}
-	
+
 	// Ensure connection is closed when function returns
 	defer func() {
 		if conn != nil {
@@ -735,7 +760,7 @@ func runWebSocketSession(id int, chainConfig ChainConfig) error {
 	// Read messages until connection fails or stop signal
 	messagesRead := 0
 	maxMessagesPerConnection := 20 // Recycle connection after 20 messages (~2 minutes for Pryzm)
-	
+
 	for {
 		select {
 		case <-stopSignal:
@@ -747,14 +772,14 @@ func runWebSocketSession(id int, chainConfig ChainConfig) error {
 				return nil
 			}
 			msgStart := time.Now()
-			
+
 			// Set read deadline for timeout
 			if err := conn.SetReadDeadline(time.Now().Add(config.StressConfig.RequestTimeout)); err != nil {
 				// Log but continue - connection may already be closed
 				getOrCreateResult("WebSocket-SetDeadline").recordRequest(false, time.Since(msgStart), "set_deadline_failed")
 				return err
 			}
-			
+
 			// Read message from WebSocket
 			_, message, err := conn.ReadMessage()
 			if err != nil {
@@ -770,10 +795,10 @@ func runWebSocketSession(id int, chainConfig ChainConfig) error {
 				getOrCreateResult("WebSocket-Read").recordRequest(false, time.Since(msgStart), errorType)
 				return err
 			}
-			
+
 			// Successfully read message
 			latency := time.Since(msgStart)
-			
+
 			// Check if this is a NewBlock event (will have block height)
 			if len(message) > 100 { // NewBlock events are typically larger
 				// This is likely a real block event
@@ -800,41 +825,41 @@ func reportProgress(duration time.Duration) {
 		case <-ticker.C:
 			elapsed := time.Since(startTime)
 			_ = time.Since(lastReport) // interval for future use
-			
+
 			fmt.Printf("\n===== Stress Test Progress: %s / %s =====\n", elapsed.Round(time.Second), duration)
 			fmt.Printf("Active Connections: %d\n", atomic.LoadInt64(&activeConns))
-			
+
 			resultsMutex.RLock()
 			for protocol, result := range results {
 				result.mu.RLock()
-				
+
 				// Calculate throughput
 				throughput := float64(result.TotalRequests) / elapsed.Seconds()
 				avgLatency := time.Duration(0)
 				if result.SuccessCount > 0 {
 					avgLatency = time.Duration(result.TotalLatency/result.SuccessCount) * time.Microsecond
 				}
-				
+
 				// Calculate percentiles
 				result.calculatePercentiles()
-				
+
 				successRate := float64(0)
 				if result.TotalRequests > 0 {
 					successRate = float64(result.SuccessCount) * 100 / float64(result.TotalRequests)
 				}
-				
+
 				fmt.Printf("\n%s:\n", protocol)
 				fmt.Printf("  Requests: %d total, %.0f/sec\n", result.TotalRequests, throughput)
-				fmt.Printf("  Success Rate: %.1f%% (%d success, %d errors)\n", 
+				fmt.Printf("  Success Rate: %.1f%% (%d success, %d errors)\n",
 					successRate, result.SuccessCount, result.ErrorCount)
-				
+
 				if result.SuccessCount > 0 {
-					fmt.Printf("  Latency - Avg: %v, Min: %v, Max: %v\n", 
+					fmt.Printf("  Latency - Avg: %v, Min: %v, Max: %v\n",
 						avgLatency, result.MinLatency, result.MaxLatency)
 					fmt.Printf("  Percentiles - P50: %v, P95: %v, P99: %v\n",
 						result.P50Latency, result.P95Latency, result.P99Latency)
 				}
-				
+
 				if len(result.ErrorTypes) > 0 {
 					fmt.Printf("  Error Types: ")
 					for errType, count := range result.ErrorTypes {
@@ -842,13 +867,13 @@ func reportProgress(duration time.Duration) {
 					}
 					fmt.Printf("\n")
 				}
-				
+
 				result.mu.RUnlock()
 			}
 			resultsMutex.RUnlock()
-			
+
 			lastReport = time.Now()
-			
+
 			if elapsed >= duration {
 				return
 			}
@@ -875,13 +900,18 @@ func runStressTest(chainName string, workers int, duration time.Duration) {
 	fmt.Printf("Configuration:\n")
 	fmt.Printf("  Workers: %d\n", workers)
 	fmt.Printf("  Duration: %s\n", duration)
-	fmt.Printf("  RPC: %s\n", chainConfig.RPC)
-	fmt.Printf("  API: %s\n", chainConfig.API)
+	fmt.Printf("  Enabled Protocols:\n")
+	if config.StressConfig.EnableRPC {
+		fmt.Printf("    ✓ RPC: %s\n", chainConfig.RPC)
+	}
+	if config.StressConfig.EnableAPI {
+		fmt.Printf("    ✓ API: %s\n", chainConfig.API)
+	}
 	if config.StressConfig.EnableGRPC {
-		fmt.Printf("  gRPC: %s\n", chainConfig.GRPC)
+		fmt.Printf("    ✓ gRPC: %s\n", chainConfig.GRPC)
 	}
 	if config.StressConfig.EnableWebSocket {
-		fmt.Printf("  WebSocket: %s\n", chainConfig.WebSocket)
+		fmt.Printf("    ✓ WebSocket: %s\n", chainConfig.WebSocket)
 	}
 	fmt.Printf("  Query Size: RPC=%d, API=%d\n", config.StressConfig.RPCQuerySize, config.StressConfig.APIQuerySize)
 	fmt.Printf("  Mixed Workload: %v\n", config.StressConfig.MixedWorkload)
@@ -900,17 +930,17 @@ func runStressTest(chainName string, workers int, duration time.Duration) {
 	if config.StressConfig.RampUpTime > 0 {
 		fmt.Printf("Ramping up workers over %s...\n", config.StressConfig.RampUpTime)
 		rampUpInterval := config.StressConfig.RampUpTime / time.Duration(workers)
-		
+
 		for i := 0; i < workers; i++ {
 			wg.Add(1)
 			go stressWorker(i, chainConfig, &wg)
-			
+
 			// Add WebSocket workers (fewer than regular workers)
 			if config.StressConfig.EnableWebSocket && i < workers/5 {
 				wg.Add(1)
 				go webSocketStressWorker(i, chainConfig, &wg)
 			}
-			
+
 			time.Sleep(rampUpInterval)
 		}
 	} else {
@@ -919,7 +949,7 @@ func runStressTest(chainName string, workers int, duration time.Duration) {
 			wg.Add(1)
 			go stressWorker(i, chainConfig, &wg)
 		}
-		
+
 		// Add WebSocket workers if enabled (fewer than regular workers)
 		if config.StressConfig.EnableWebSocket {
 			wsWorkers := workers / 5
@@ -975,7 +1005,7 @@ func printFinalReport(chainConfig ChainConfig) {
 
 	// Aggregate totals
 	var totalRequests, totalSuccess, totalErrors int64
-	
+
 	for _, result := range results {
 		totalRequests += result.TotalRequests
 		totalSuccess += result.SuccessCount
@@ -998,7 +1028,7 @@ func printFinalReport(chainConfig ChainConfig) {
 	for _, protocol := range protocols {
 		result := results[protocol]
 		result.mu.RLock()
-		
+
 		if result.TotalRequests == 0 {
 			result.mu.RUnlock()
 			continue
@@ -1007,11 +1037,11 @@ func printFinalReport(chainConfig ChainConfig) {
 		fmt.Printf("📈 %s Performance:\n", protocol)
 		fmt.Printf("  Requests: %d\n", result.TotalRequests)
 		fmt.Printf("  Success Rate: %.1f%%\n", float64(result.SuccessCount)*100/float64(result.TotalRequests))
-		
+
 		if result.SuccessCount > 0 {
 			avgLatency := time.Duration(result.TotalLatency/result.SuccessCount) * time.Microsecond
 			result.calculatePercentiles()
-			
+
 			fmt.Printf("  Average Latency: %v\n", avgLatency)
 			fmt.Printf("  Min/Max Latency: %v / %v\n", result.MinLatency, result.MaxLatency)
 			fmt.Printf("  Percentiles:\n")
@@ -1019,7 +1049,7 @@ func printFinalReport(chainConfig ChainConfig) {
 			fmt.Printf("    P95: %v\n", result.P95Latency)
 			fmt.Printf("    P99: %v\n", result.P99Latency)
 		}
-		
+
 		if len(result.ErrorTypes) > 0 {
 			fmt.Printf("  Error Breakdown:\n")
 			errorTypes := []string{}
@@ -1027,14 +1057,14 @@ func printFinalReport(chainConfig ChainConfig) {
 				errorTypes = append(errorTypes, errType)
 			}
 			sort.Strings(errorTypes)
-			
+
 			for _, errType := range errorTypes {
 				count := result.ErrorTypes[errType]
 				pct := float64(count) * 100 / float64(result.ErrorCount)
 				fmt.Printf("    %s: %d (%.1f%%)\n", errType, count, pct)
 			}
 		}
-		
+
 		result.mu.RUnlock()
 		fmt.Printf("\n")
 	}
@@ -1055,14 +1085,14 @@ func assessPerformance(chainConfig ChainConfig) {
 
 	for protocol, result := range results {
 		result.mu.RLock()
-		
+
 		if result.TotalRequests == 0 {
 			result.mu.RUnlock()
 			continue
 		}
 
 		successRate := float64(result.SuccessCount) * 100 / float64(result.TotalRequests)
-		
+
 		// Check success rate
 		if successRate < 90 {
 			issues = append(issues, fmt.Sprintf("%s has low success rate: %.1f%%", protocol, successRate))
@@ -1075,21 +1105,21 @@ func assessPerformance(chainConfig ChainConfig) {
 		// Check latency
 		if result.SuccessCount > 0 {
 			result.calculatePercentiles()
-			
+
 			// For WebSocket protocols, adjust thresholds based on block time
 			isWebSocket := strings.Contains(protocol, "WebSocket")
 			blockTime, _ := time.ParseDuration(chainConfig.BlockTime)
-			
+
 			// Dynamic thresholds
 			p99Threshold := 5 * time.Second
 			p95Threshold := 3 * time.Second
-			
+
 			if isWebSocket && blockTime > 0 {
 				// For WebSocket NewBlock subscriptions, expect latency near block time
 				p99Threshold = blockTime + 2*time.Second // Allow 2s overhead
 				p95Threshold = blockTime + 1*time.Second // Allow 1s overhead
 			}
-			
+
 			if result.P99Latency > p99Threshold {
 				if isWebSocket {
 					issues = append(issues, fmt.Sprintf("%s P99 latency too high: %v (block time: %s)", protocol, result.P99Latency, chainConfig.BlockTime))
@@ -1103,14 +1133,14 @@ func assessPerformance(chainConfig ChainConfig) {
 					warnings = append(warnings, fmt.Sprintf("%s P95 latency elevated: %v", protocol, result.P95Latency))
 				}
 			}
-			
+
 			if result.P50Latency < 500*time.Millisecond {
 				good = append(good, fmt.Sprintf("%s median latency excellent: %v", protocol, result.P50Latency))
 			} else if isWebSocket && result.P50Latency < blockTime+500*time.Millisecond {
 				good = append(good, fmt.Sprintf("%s median latency good: %v (expected ~%s for blocks)", protocol, result.P50Latency, chainConfig.BlockTime))
 			}
 		}
-		
+
 		result.mu.RUnlock()
 	}
 
